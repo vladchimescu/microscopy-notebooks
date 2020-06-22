@@ -48,7 +48,7 @@ if __name__ == '__main__':
     plate = sys.argv[1]
     print("Processing plate: " + str(plate))
     # load plate annotation table
-    annot_df = pd.read_csv('Jupyter/data/AML_trainset/drugannot.txt',
+    annot_df = pd.read_csv('data/AML_trainset/drugannot.txt',
                            sep='\t')
     platedir = os.path.join(path, plate)
     dmso = annot_df[annot_df.Drug == 'DMSO'].reset_index(drop=True)
