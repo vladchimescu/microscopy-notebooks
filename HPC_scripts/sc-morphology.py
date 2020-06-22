@@ -10,12 +10,7 @@ import pandas as pd
 import os
 import sys
 import h5py
-sys.path.append('..')
-sys.path.append('../..')
-from bioimg.classify import ImgX
-from base.utils import load_imgstack
-from segment.tools import read_bbox
-
+from bioimg import ImgX, load_imgstack, read_bbox
 
 def get_train_instance(path, fname,
                        columns=['ymin', 'xmin', 'ymax', 'xmax'],
@@ -43,7 +38,7 @@ if __name__ == '__main__':
     platedir = os.path.join(path, plate)
     imgs = [f.replace('.csv', '') for f in os.listdir(platedir) if '.csv' in f]
     # load plate annotation table
-    drug_df = pd.read_csv('Jupyter/data/AML_trainset/drugannot.txt',
+    drug_df = pd.read_csv('data/AML_trainset/drugannot.txt',
                           sep='\t')
     drug_df = drug_df.sort_values(['well', 'Culture']).reset_index(drop=True)
     well = drug_df['well'][wellnum]
@@ -63,8 +58,9 @@ if __name__ == '__main__':
         # initialize 'ImgX' class
         imgx = ImgX(img=img, bbox=bbox,
                     n_chan=['Lysosomal', 'Calcein', 'Hoechst'])
+        imgx.params['texture'] = 'both'
         imgx.compute_props()
-        img_df = imgx.data.copy()
+        img_df = imgx.get_df().copy()
         if img_df.shape[0] == labels_df.shape[0]:
             annot.append(labels_df)
             imgdata.append(img_df)

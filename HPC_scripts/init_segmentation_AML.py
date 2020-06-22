@@ -17,11 +17,9 @@ from skimage.morphology import white_tophat
 from skimage.morphology import remove_small_objects
 from skimage.measure import label
 from skimage.measure import regionprops
-sys.path.append('..')
-from base.utils import load_imgstack
-from transform.process import threshold_img
-from segment.cv_methods import filter_segm
-from base.future_versions import regionprops_table
+from bioimg import load_imgstack, threshold_img
+from bioimg.segment.cv_methods import filter_segm
+from skimage.measure import regionprops_table
 
 
 def segment_connected_components(img):
