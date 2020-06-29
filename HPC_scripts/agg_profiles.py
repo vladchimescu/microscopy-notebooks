@@ -37,8 +37,10 @@ if __name__ == '__main__':
                            sep='\t')
     platedir = os.path.join(path, plate)
 
-    # load all wells
-    all_wells = annot_df['well'].values
+    # load all wells in which cells were detected
+    all_wells = [f.replace('.csv', '') for f
+                 in os.listdir(platedir) if '.csv' in f]    
+    all_wells = np.array(all_wells)
 
     imgdf, img_annot = load_viable_cells(platedir=platedir, 
                                         wells=all_wells,
