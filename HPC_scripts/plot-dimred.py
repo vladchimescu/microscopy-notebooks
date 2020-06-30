@@ -58,8 +58,9 @@ feat_boxplot = ['ch-Hoechst-mean_intensity', 'ch-Lysosomal-mean_intensity',
 def load_cells(platedir, wells, annot, which=[1,2]):
     imgdf = []
     for w in wells:
-        df = pd.read_csv(os.path.join(platedir, w+'.csv'))
-        imgdf.append(df[np.isin(df['class'], which)])
+        if os.path.exists(os.path.join(platedir, w+'.csv')):
+            df = pd.read_csv(os.path.join(platedir, w+'.csv'))
+            imgdf.append(df[np.isin(df['class'], which)])
     imgdf = pd.concat(imgdf).reset_index(drop=True)
     labels = imgdf[['class', 'file']]
     imgdf = imgdf.drop(['class', 'file'], axis=1)
