@@ -45,11 +45,9 @@ if __name__ == '__main__':
     imgdf, img_annot = load_viable_cells(platedir=platedir, 
                                         wells=all_wells,
                                        annot=annot_df)
-    ctrl_df = imgdf[img_annot['Drug']=='DMSO']
-    sel = VarianceThreshold(threshold=1e-12).fit(ctrl_df)
-    ctrl_df = select_features(df=ctrl_df, sel=sel)
-
+    sel = VarianceThreshold(threshold=1e-12).fit(imgdf)
     imgdf = preprocess_data(df=imgdf, sel=sel, glog=True)
+    ctrl_df = imgdf[img_annot['Drug']=='DMSO']
     # center and scale by control wells
     scaler = StandardScaler().fit(ctrl_df)
     imgdf_scaled = scale_data(imgdf, scaler=scaler)
