@@ -116,7 +116,10 @@ if __name__ == '__main__':
     pickle.dump(segf, open("segf_nuclei.pkl", "wb"))
     # segf = pickle.load(open("segf_nuclei.pkl", "rb"))
 
-    # and segmentation-free profiles for all channels
+    # and segmentation-free profiles for all channels combined
+    segf = SegfreeProfiler(tile_size=(10,10),
+                       n_block_types=20,
+                       n_supblock_types=20)
     imgs_norm = [normalize_channels(img) for img in imglist ]
     cell_prof = segf.fit_transform(imgs_norm)
     pickle.dump(segf, open("segf_cells.pkl", "wb"))
