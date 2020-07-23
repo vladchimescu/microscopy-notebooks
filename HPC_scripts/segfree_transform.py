@@ -52,7 +52,7 @@ if __name__ == '__main__':
                            verbose=False) for f in well_imgs if fview in f]
         imglist.append(np.stack(imgs, axis=-1))
 
-    outdir = 'data/segfree/cellpainting/'
+    outdir = os.path.join('data/segfree/cellpainting/', plate)
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
@@ -77,6 +77,7 @@ if __name__ == '__main__':
                                for col in cell_prof.columns.values]
 
     segf_prof = pd.concat([nucl_prof, cell_prof], axis=1)
-    segf_prof.index = titles
+    df_out = pd.DataFrame(segf_prof.agg('mean')).T
+    df_out.to_csv(os.path.join(outdir, well.replace('cdp2bioactives_', '')+'.csv' ), index=False)
 
     javabridge.kill_vm()
