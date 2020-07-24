@@ -37,13 +37,15 @@ if __name__ == '__main__':
 
     platedir = os.path.join(path, plate)
     fnames = [f for f in os.listdir(platedir) if '.tif' in f]
-    all_wells = list(set([re.search('cdp2bioactives_[a-z][0-9]+',f).group(0) for f in fnames]))
+    all_wells = list(set([re.search('_[a-z][0-9]+_',f).group(0) for f in fnames]))
     all_wells.sort()
+    assert(len(all_wells) == 384)
 
     well_id = int(sys.argv[2]) - 1
     well = all_wells[well_id]
 
     well_imgs = [f for f in fnames if well in f]
+    assert(len(well_imgs) == 30)
 
     imglist = []
     for i in range(6):
@@ -78,6 +80,6 @@ if __name__ == '__main__':
 
     segf_prof = pd.concat([nucl_prof, cell_prof], axis=1)
     df_out = pd.DataFrame(segf_prof.agg('mean')).T
-    df_out.to_csv(os.path.join(outdir, well.replace('cdp2bioactives_', '')+'.csv' ), index=False)
+    df_out.to_csv(os.path.join(outdir, well.replace('_', '')+'.csv' ), index=False)
 
     javabridge.kill_vm()
