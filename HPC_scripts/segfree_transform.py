@@ -79,7 +79,21 @@ if __name__ == '__main__':
                                for col in cell_prof.columns.values]
 
     segf_prof = pd.concat([nucl_prof, cell_prof], axis=1)
-    df_out = pd.DataFrame(segf_prof.agg('median')).T
+    df_med = pd.DataFrame(segf_prof.agg('median')).T
+    df_med.columns = ['-'.join(['median', col]) for col in df_med.columns.values]
+
+    df_mean = pd.DataFrame(segf_prof.agg('mean')).T
+    df_mean.columns = ['-'.join(['mean', col]) for col in df_mean.columns.values]
+
+    df_min = pd.DataFrame(segf_prof.agg('min')).T
+    df_min.columns = ['-'.join(['min', col]) for col in df_min.columns.values]
+
+    df_max = pd.DataFrame(segf_prof.agg('max')).T
+    df_max.columns = ['-'.join(['max', col]) for col in df_max.columns.values]
+
+    df_out = pd.concat([df_med, df_mean, df_max, df_min], axis=1)
+    
+    
     df_out.to_csv(os.path.join(outdir, well.replace('_', '')+'.csv' ), index=False)
 
     javabridge.kill_vm()
