@@ -79,7 +79,7 @@ if __name__ == '__main__':
                                for col in cell_prof.columns.values]
 
     segf_prof = pd.concat([nucl_prof, cell_prof], axis=1)
-    df_out = pd.DataFrame(segf_prof.agg('mean')).T
+    df_out = pd.DataFrame(segf_prof.agg('median')).T
     df_out.to_csv(os.path.join(outdir, well.replace('_', '')+'.csv' ), index=False)
 
     javabridge.kill_vm()
