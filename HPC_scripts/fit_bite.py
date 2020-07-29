@@ -64,7 +64,10 @@ if __name__ == '__main__':
         well_ind = random.sample(range(96), 10)
         for w in well_ind:
             well = all_wells[w]
-            titles.append(plate_annot[plate_annot['well']==well]['comb'].values[0])
+            if plate_annot[plate_annot['well']==well].size:
+                titles.append(plate_annot[plate_annot['well']==well]['comb'].values[0])
+            else:
+                titles.append('NA')
             well_imgs = [f for f in fnames if well in f and 'ch2' not in f]
             fview = 'f0'+str(random.choice(range(4)) + 1) + 'p'
             wellpos = [f for f in well_imgs if fview in f]
