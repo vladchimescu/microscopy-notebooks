@@ -110,16 +110,16 @@ if __name__ == '__main__':
     hoechst = [img_as_ubyte(img) for img in hoechst]
 
     segf = SegfreeProfiler(tile_size=(10,10),
-                       n_block_types=20,
-                       n_supblock_types=20)
+                       n_block_types=10,
+                       n_supblock_types=10)
     nucl_prof = segf.fit_transform(hoechst)
     pickle.dump(segf, open("segf_nuclei.pkl", "wb"))
     # segf = pickle.load(open("segf_nuclei.pkl", "rb"))
 
     # and segmentation-free profiles for all channels combined
     segf = SegfreeProfiler(tile_size=(10,10),
-                       n_block_types=20,
-                       n_supblock_types=20)
+                       n_block_types=10,
+                       n_supblock_types=10)
     imgs_norm = [normalize_channels(img) for img in imglist ]
     cell_prof = segf.fit_transform(imgs_norm)
     pickle.dump(segf, open("segf_cells.pkl", "wb"))
