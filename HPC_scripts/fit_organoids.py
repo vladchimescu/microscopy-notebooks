@@ -50,7 +50,7 @@ if __name__ == '__main__':
     for path in paths:
         fnames, all_wells = get_all_wells(path=path)
         # randomly sample 10 wells
-        sel_wells = random.sample(all_wells, k=10)
+        sel_wells = random.sample(all_wells, k=5)
         for w in sel_wells:
             print("Processing well: %s" % w)
             well_files = [f for f in fnames if w in f]
