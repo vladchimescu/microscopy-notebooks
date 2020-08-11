@@ -133,7 +133,8 @@ if __name__ == '__main__':
     plt.savefig(os.path.join(outdir, 'cumvariance-PCA-segfree.pdf'))
 
     nchan = 5
-    eigentiles = segf.pca.components_.reshape((segf.n_components, *segf.tile_size, nchan))
+    eigentiles = segf.pca.components_.reshape((segf.n_components,
+                                               *segf.tile_size, nchan))
     plot_channels([combine_channels([eigentiles[j,:,:,i] for i in range(5)], **col_params) for j in range(50)],
               nrow=5, ncol=10, scale_x=2, scale_y=2)
     plt.savefig(os.path.join(outdir, 'eigentiles.pdf'),
