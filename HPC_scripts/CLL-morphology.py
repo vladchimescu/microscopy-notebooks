@@ -43,13 +43,14 @@ if __name__ == '__main__':
     # load the bounding box file for the whole plate
     eval_df = pd.read_table(os.path.join(evdir,
                                          'Objects_Population - CLL cell nuclei.txt'), skiprows=9)
+    eval_df['class'] = np.where(eval_df['CLL cell nuclei - CLL Nuclei Area [µm²]'] < 23.8, 1, 2)
     eval_df['Row'] = eval_df['Row'].astype(str)
     eval_df['Column'] = eval_df['Column'].astype(str)
     eval_df['Field'] = eval_df['Field'].astype(str)
 
     eval_df = eval_df.assign(well=lambda x: 'r' + x['Row'].str.zfill(2) + 'c' + x['Column'].str.zfill(2))
     eval_df = eval_df.assign(wellpos=lambda x: x['well'] + 'f' + x['Field'].str.zfill(2))
-    eval_df = eval_df[['well','wellpos', 'Bounding Box', 'X', 'Y']]
+    eval_df = eval_df[['well','wellpos', 'Bounding Box', 'X', 'Y', 'class']]
     eval_df[['xmin','ymin','xmax','ymax']] = pd.DataFrame(eval_df['Bounding Box'].apply(lambda x: list(literal_eval(x))).tolist())
 
     all_wells = eval_df['well'].unique()
@@ -80,6 +81,7 @@ if __name__ == '__main__':
                 n_chan=['Hoechst', 'Lysosomal'])
            imgx.compute_props()
            img_df = imgx.get_df().copy()
+           img_df['class'] = well_df['class'].values
            imgdata.append(img_df)
 
 
