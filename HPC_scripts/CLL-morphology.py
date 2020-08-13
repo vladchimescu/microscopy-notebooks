@@ -89,6 +89,6 @@ if __name__ == '__main__':
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    X_out.to_csv(os.path.join(outdir, well + '.csv'),
+    X_df.to_csv(os.path.join(outdir, well + '.csv'),
                  index=False)
     javabridge.kill_vm()
