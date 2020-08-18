@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''
 Script for fitting unsupervised segmentation-free model
-on CellPainting data
+on 3D organoid compound screen images
 '''
 import matplotlib as mpl
 mpl.use('Agg')
