@@ -27,14 +27,12 @@ def nantonum(img, pad=-1):
 if __name__ == "__main__":
     javabridge.start_vm(class_path=bf.JARS)
 
-    # so the arguments are going to be in sys.argv list
-    # sys.arv[1] is the plate ID (for BiTE data Tag1, Tag2, ...)
-    # sys.argv[2] is the well number
-    plate = sys.argv[1]
-    print("Processing plate: " + str(plate))
-    # path = sys.argv[1]
-    path = "/g/huber/users/vkim/gitlab/microscopy/data/Tobias/newscreen/"
 
+    #path = "/g/huber/users/vkim/gitlab/microscopy/data/Tobias/newscreen/"
+    path = sys.argv[1]
+    plate = sys.argv[2]
+    print("Processing plate: " + str(plate))
+    
     for f in os.listdir(path):
         if re.search(plate + "_", f):
             screen_id = f
@@ -42,7 +40,7 @@ if __name__ == "__main__":
     platedir = os.path.join(path, screen_id, 'Images')
     print("Image path: " + str(platedir))
 
-    well_id = int(sys.argv[2])-1
+    well_id = int(sys.argv[3])-1
 
     fnames = [f for f in os.listdir(platedir) if '.tiff' in f]
     all_wells = list(set([re.search('r[0-9]+c[0-9]+',f).group(0) for f in fnames]))
