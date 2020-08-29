@@ -79,6 +79,7 @@ if __name__ == '__main__':
            imgx = ImgX(img=np.stack([hoechst, ly], axis=-1), 
                 bbox=bbox,
                 n_chan=['Hoechst', 'Lysosomal'])
+           imgx.params['texture'] = 'both'
            imgx.compute_props()
            img_df = imgx.get_df().copy()
            img_df['class'] = well_df['class'].values
