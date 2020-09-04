@@ -12,7 +12,7 @@ from bioimg.singlecell import preprocess_data
 from bioimg.singlecell import select_features, scale_data
 from bioimg.singlecell import aggregate_profiles
 
-def load_bite(platedir, wells, annot, thresh=100):
+def load_bite(platedir, wells, annot, thresh=300):
     imgdf = []
     for w in wells:
         if os.path.isfile(os.path.join(platedir, w+'.csv')):
@@ -22,7 +22,8 @@ def load_bite(platedir, wells, annot, thresh=100):
     imgdf = pd.concat(imgdf)
     labels = imgdf[['well']]
     imgdf = imgdf.drop(['well'], axis=1) 
-    labels = pd.merge(labels, annot, on='well')
+    labels = pd.merge(left=labels, right=annot,
+                      on='well', how='left')
 
     # cutoff for viability based on Calcein pixel area
     viab = (imgdf['ch-Calcein-area'] > thresh).values
