@@ -27,7 +27,6 @@ def nantonum(img, pad=-1):
 if __name__ == "__main__":
     javabridge.start_vm(class_path=bf.JARS)
 
-
     #path = "/g/huber/users/vkim/gitlab/microscopy/data/Tobias/newscreen/"
     path = sys.argv[1]
     plate = sys.argv[2]
