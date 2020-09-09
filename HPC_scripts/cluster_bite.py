@@ -48,7 +48,7 @@ if __name__ == "__main__":
     well_imgs = [f for f in fnames if well in f and 'ch2' not in f]
 
     
-    disk_size = 5
+    disk_size = 2
     bounds = {'area': (1400, np.inf)}
     
     imgdata = []
