@@ -12,7 +12,7 @@ from bioimg.singlecell import preprocess_data
 from bioimg.singlecell import select_features, scale_data
 from bioimg.singlecell import aggregate_profiles
 
-def load_bite(platedir, wells, annot, thresh=1200):
+def load_bite(platedir, wells, annot, thresh=600):
     imgdf = []
     for w in wells:
         if os.path.isfile(os.path.join(platedir, w+'.csv')):
