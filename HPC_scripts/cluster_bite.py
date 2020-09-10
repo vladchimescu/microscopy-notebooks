@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     
     disk_size = 2
-    bounds = {'area': (1400, np.inf)}
+    bounds = {'area': (1000, np.inf)}
     
     imgdata = []
     for i in range(1,5):
