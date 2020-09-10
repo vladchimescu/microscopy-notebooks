@@ -60,22 +60,30 @@ if __name__ == '__main__':
     annot_samp = annot_df[annot_df['PatientID']==s]
 
     ctrl_well = annot_samp[annot_samp['comb']=='DMSO']['well'].values[1]
-    mipseries = load_bite_image(well=ctrl_well)
-    ctrl_image = combine_channels([mipseries[i] for i in range(1,4)],
+    ctrl_imglist = []
+    for i in range(1,5):
+        mipseries = load_bite_image(well=ctrl_well, fview=i)
+        ctrl_image = combine_channels([mipseries[i] for i in range(1,4)],
                              **col_params)
+        ctrl_imglist.append(ctrl_image)
 
     comb_well = annot_samp[annot_samp['comb']==drug]['well'].values[0]
-    mipseries = load_bite_image(well=comb_well)
-    bite_image = combine_channels([mipseries[i] for i in range(1,4)],
-                             **col_params)
-
-
+    bite_imglist = []
+    for i in range(1,5):
+        mipseries = load_bite_image(well=comb_well, fview=i)
+        bite_image = combine_channels([mipseries[i] for i in range(1,4)],
+                                 **col_params)
+        bite_imglist.append(bite_image)
+        
     outdir = "figures/BiTE-topwells"
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    plot_channels([ctrl_image, bite_image],
-                  nrow=1, ncol=2,
-                  titles=['Control', drug])
+
+    imglist = ctrl_imglist + bite_imglist
+    titles = ['Control']*4 + [drug]*4
+    plot_channels(imglist,
+                  nrow=2, ncol=4,
+                  titles=titles)
     plt.savefig(os.path.join(outdir, s + '-' + drug + '.pdf'),
                 bbox_inches='tight')
 
