@@ -101,6 +101,12 @@ if __name__ == '__main__':
     ## aggregated profiles
     img_prof = aggregate_profiles(imgdf_scaled, annot_both)
 
+    # add cluster count in each well (unnormalized count)
+    clust_count = annot_both.groupby('well').size().reset_index()
+    clust_count.rename(columns={0 : 'count'}, inplace=True)
+    img_prof = pd.merge(img_prof, clust_count, on='well')
+    
+
     outdir = 'data/clustbite_mean_profiles/'
     if not os.path.exists(outdir):
         os.makedirs(outdir)
