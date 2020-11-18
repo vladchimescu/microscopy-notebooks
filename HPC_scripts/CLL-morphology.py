@@ -43,6 +43,9 @@ if __name__ == '__main__':
     # load the bounding box file for the whole plate
     eval_df = pd.read_table(os.path.join(evdir,
                                          'Objects_Population - CLL cell nuclei.txt'), skiprows=9)
+    # remove objects with area less than 10 um^2
+    eval_df = eval_df[eval_df['CLL cell nuclei - CLL Nuclei Area [µm²]'] > 10].reset_index(drop=True)
+
     eval_df['class'] = np.where(eval_df['CLL cell nuclei - CLL Nuclei Area [µm²]'] < 23.8, 1, 2)
     eval_df['Row'] = eval_df['Row'].astype(str)
     eval_df['Column'] = eval_df['Column'].astype(str)
