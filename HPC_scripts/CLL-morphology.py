@@ -30,7 +30,7 @@ if __name__ == '__main__':
     evdir = os.path.join(path, 'Evaluations')
     
     for f in os.listdir(imgdir):
-        if re.search(plate, f):
+        if re.search(plate + "_", f):
             screen_id = f
 
     imgdir = os.path.join(imgdir, screen_id, 'Images')
