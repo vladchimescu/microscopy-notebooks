@@ -37,7 +37,7 @@ if __name__ == '__main__':
                       sep='\t')
     platedir = os.path.join(path, plate)
 
-     # load plate annotation table
+    # load plate annotation table
     if patannot[patannot['plate']== plate]['Diagnosis'].values[0] == 'HCL':
         annot_df = pd.read_csv('data/coculture_metafiles/HCL_plate_layout.txt',
                        sep='\t')

@@ -66,10 +66,30 @@ if __name__ == '__main__':
     plate = sys.argv[2]
     print("Processing plate: " + str(plate))
 
+    # plate - patient diagnosis table
+    patannot = pd.read_csv('data/coculture_metafiles/patannot.txt',
+                      sep='\t')
+    # CLL screen plate map
+    screenmap = pd.read_csv('data/coculture_metafiles/screen_map.txt',
+                            sep='\t')
+
+    # for CLL there are 4 different plate layouts
+    # in non-CLL entities: HCL samples have an additional drug 'Vemurafenib'
     if 'CLL' in path:
         load_cells = load_CLL_cells
+        lt = screenmap[screenmap['plate']==plate]['lt'].values[0]
+        layout_file = 'CLL_' + lt + '_layout.txt'
+        annot_df = pd.read_csv(os.path.join('data/coculture_metafiles', layout_file),
+                               sep='\t')
     else:
         load_cells = load_nonCLL_cells
+        # load plate annotation table
+        if patannot[patannot['plate']== plate]['Diagnosis'].values[0] == 'HCL':
+            annot_df = pd.read_csv('data/coculture_metafiles/HCL_plate_layout.txt',
+                           sep='\t')
+        else:
+            annot_df = pd.read_csv('data/AML_trainset/drugannot.txt',
+                               sep='\t')
     
     # load plate annotation table
     annot_df = pd.read_csv('data/AML_trainset/drugannot.txt',
