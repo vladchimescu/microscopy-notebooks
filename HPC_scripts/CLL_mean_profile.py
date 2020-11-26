@@ -33,8 +33,13 @@ if __name__ == '__main__':
     # plate identifier (e.g. '180528_Plate3')
     plate = sys.argv[1]
     print("Processing plate: " + str(plate))
+
+    screenmap = pd.read_csv('data/coculture_metafiles/screen_map.txt',
+                            sep='\t')
     # load plate annotation table
-    annot_df = pd.read_csv('data/AML_trainset/drugannot.txt',
+    lt = screenmap[screenmap['plate']==plate]['lt'].values[0]
+    layout_file = 'CLL_' + lt + '_layout.txt'
+    annot_df = pd.read_csv(os.path.join('data/coculture_metafiles', layout_file),
                            sep='\t')
     platedir = os.path.join(path, plate)
 

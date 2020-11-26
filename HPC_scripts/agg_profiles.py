@@ -32,10 +32,19 @@ if __name__ == '__main__':
     # plate identifier (e.g. '180528_Plate3')
     plate = sys.argv[1]
     print("Processing plate: " + str(plate))
-    # load plate annotation table
-    annot_df = pd.read_csv('data/AML_trainset/drugannot.txt',
-                           sep='\t')
+
+    patannot = pd.read_csv('data/coculture_metafiles/patannot.txt',
+                      sep='\t')
     platedir = os.path.join(path, plate)
+
+     # load plate annotation table
+    if patannot[patannot['plate']== plate]['Diagnosis'].values[0] == 'HCL':
+        annot_df = pd.read_csv('data/coculture_metafiles/HCL_plate_layout.txt',
+                       sep='\t')
+    else:
+        annot_df = pd.read_csv('data/AML_trainset/drugannot.txt',
+                           sep='\t')
+    
 
     # load all wells in which cells were detected
     all_wells = [f.replace('.csv', '') for f
