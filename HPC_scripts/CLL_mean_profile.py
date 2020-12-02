@@ -26,6 +26,13 @@ def load_CLL_cells(platedir, wells, annot, which=[1,2]):
     labels = pd.merge(labels, annot, on='well')
     return imgdf, labels
 
+def normalize_by_control(imgdf, img_annot):
+    ctrl_df = imgdf[img_annot['Drug']=='DMSO']
+    # center and scale by control wells
+    scaler = StandardScaler().fit(ctrl_df)
+    imgdf_scaled = scale_data(imgdf, scaler=scaler)
+    return imgdf_scaled
+
 
 if __name__ == '__main__':
     # path to the image data
@@ -54,10 +61,18 @@ if __name__ == '__main__':
                                       which=2)
     sel = VarianceThreshold(threshold=1e-12).fit(imgdf)
     imgdf = preprocess_data(df=imgdf, sel=sel, glog=True)
-    ctrl_df = imgdf[img_annot['Drug']=='DMSO']
-    # center and scale by control wells
-    scaler = StandardScaler().fit(ctrl_df)
-    imgdf_scaled = scale_data(imgdf, scaler=scaler)
+
+    mono_df = imgdf[img_annot['Culture']=='Mono-culture']
+    mono_annot =  img_annot[img_annot['Culture']=='Mono-culture']
+    co_df = imgdf[img_annot['Culture']=='Co-culture']
+    co_annot = img_annot[img_annot['Culture']=='Co-culture']
+
+    # normalize mono- and cocultures separately
+    mono_scaled = normalize_by_control(imgdf=mono_df, img_annot=mono_annot)
+    co_scaled = normalize_by_control(imgdf=co_df, img_annot=co_annot)
+    
+    imgdf_scaled = pd.concat([mono_scaled, co_scaled]).reset_index(drop=True)
+    img_annot = pd.concat([mono_annot, co_annot]).reset_index(drop=True)
 
     ## aggregated profiles
     img_prof = aggregate_profiles(imgdf_scaled, img_annot)
