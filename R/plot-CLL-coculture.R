@@ -162,3 +162,102 @@ ph = pheatmap(drugprof_sel,
               treeheight_col = 0)
 save_pheatmap_pdf(ph, filename = paste0(figdir, 'CLL-drugprofiles-autophagy.pdf'),
                   width = 9, height = 8)
+
+
+
+# Coculture vs Monoculture morphological feature difference by sample
+cultdiff = read.csv(paste0(datadir, 'CLL_diff_DMSO.csv'))
+cultdiff = dplyr::rename(cultdiff, feature=X)
+cultdiff = filter(cultdiff, ! feature %in% c("ch-Hoechst-moments_hu-1",
+                                             "ch-Lysosomal-moments_hu-2",
+                                             "ch-Lysosomal-moments_hu-1",
+                                             "ch-Lysosomal-moments_hu-3",
+                                             "ch-Lysosomal-mean_intensity",
+                                             "ch-Hoechst-extent",
+                                             "ch-Lysosomal-zernike-r15-1",
+                                             "ch-Lysosomal-solidity",
+                                             "ch-Lysosomal-moments_central-0-2",
+                                             "ch-Lysosomal-moments_central-2-0"))
+
+df_wide = tidyr::spread(select(cultdiff, feature, plate, diff_medians),
+                        key='feature', value='diff_medians')
+rownames(df_wide) = df_wide$plate
+df_wide = df_wide[,-1]
+colnames(df_wide) = gsub("ch-", "", colnames(df_wide))
+
+df_wide = t(df_wide)
+
+paletteLength <- 200
+heat_scale <- colorRampPalette(c("#417ca8","white", "#d1483a"))(paletteLength)
+maxval = max(abs(df_wide), na.rm = T)
+myBreaks <- c(seq(-maxval, 0, length.out=ceiling(paletteLength/2) + 1), 
+              seq(1/paletteLength, maxval,
+                  length.out=floor(paletteLength/2)))
+
+row_clust = pheatmap(cor(t(df_wide), use="pairwise.complete.obs"), silent = T)
+col_clust = pheatmap(cor(df_wide, use="pairwise.complete.obs"), silent = T)
+
+
+colannot = data.frame(plate = colnames(df_wide))
+colannot = left_join(colannot, patannot)
+rownames(colannot) = colannot$plate
+colannot = select(colannot, -c(plate))
+ann_colors <- list(IGHV=dg)
+
+df_wide[df_wide == 0] = NA
+
+ph = pheatmap(df_wide,
+              #cluster_rows = row_clust$tree_row, 
+              cluster_cols = col_clust$tree_col,
+              color = heat_scale,
+              breaks = myBreaks, 
+              show_colnames = F,
+              annotation_col = colannot,
+              annotation_colors = ann_colors,
+              treeheight_row = 0, 
+              treeheight_col = 0,
+              na_col = '#888888')
+
+
+# now flip the matrix
+df_long = t(df_wide)
+df_long = df_long[,c('Hoechst-eccentricity',
+                      'Hoechst-Correlation-d7-1',
+                      'Lysosomal-area',
+                      'Lysosomal-extent',
+                      'Lysosomal-zernike-r15-2')]
+colnames(df_long) = c('Hoechst eccentricity',
+                      'Hoechst Correlation [d = 7]',
+                      'Lysosomal area',
+                      'Lysosomal extent',
+                      'Lysosomal zernike [r = 15]')
+ph = pheatmap(df_long,
+              cluster_cols = F,
+              cluster_rows = col_clust$tree_col,
+              color = heat_scale,
+              breaks = myBreaks, 
+              show_rownames = F,
+              annotation_row = colannot,
+              annotation_colors = ann_colors,
+              treeheight_row = 0, 
+              treeheight_col = 0,
+              na_col = '#888888')
+
+save_pheatmap_pdf(ph, filename = paste0(figdir, 'CLL-DMSO-culture-difference.pdf'),
+                  width = 2.5, height = 7)
+
+
+# aggregate the profiles across concentrations
+drug_prof$drugconc = rownames(drug_prof)
+drugprof_long = reshape2::melt(drug_prof, id.variable='drugconc') %>%
+  tidyr::separate(drugconc, c('drug', 'conc'), sep='_') %>%
+  filter(drug != "DMSO")
+
+# take the extreme normalized value for each feature across 3 concentrations
+drugprof_long = group_by(drugprof_long, drug, variable) %>%
+  summarise(value = value[which.max(abs(value))])
+
+heat_wide = tidyr::spread(drugprof_long, variable, value)
+mat_heatmap = as.matrix(heat_wide[,-1])
+rownames(mat_heatmap) = heat_wide$drug
+saveRDS(mat_heatmap, file = paste0(datadir, 'CLL-profiles-wide.rds'))

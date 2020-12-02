@@ -17,6 +17,8 @@ save_pheatmap_pdf <- function(x, filename, width=10, height=10) {
 
 drug_prof = read.csv(paste0(datadir, 'all_profiles_coculture.csv'),
                      row.names = 1)
+# remove 'Vemurafenib'
+drug_prof = drug_prof[!grepl("Vemurafenib", rownames(drug_prof)),]
 
 colannot = data.frame(names = colnames(drug_prof))
 colannot = mutate(colannot, Channel = ifelse(grepl('Calcein', names), 'Calcein',
@@ -137,7 +139,35 @@ save_pheatmap_pdf(ph, filename = paste0(figdir, 'drugprofiles-small-subset.pdf')
 # Coculture vs Monoculture morphological feature difference by sample
 cultdiff = read.csv(paste0(datadir, 'diff_DMSO.csv'))
 cultdiff = dplyr::rename(cultdiff, feature=X)
-cultdiff = mutate(cultdiff, diff_medians = ifelse(padj < 0.01, diff_medians, 0))
+cultdiff = filter(cultdiff, ! feature %in% c("ch-Hoechst-weighted_moments-0-1",
+                                             "ch-Hoechst-SumAverage-d5-3",
+                                             "ch-Hoechst-SumAverage-d3-0" ))
+#cultdiff = mutate(cultdiff, diff_medians = ifelse(padj < 0.01, diff_medians, 0))
+cultdiff = mutate(cultdiff, feature = plyr::mapvalues(feature,
+                                                      from = c("ch-Calcein-moments_hu-1",
+                                                               "ch-Lysosomal-mean_intensity",
+                                                               "ch-Hoechst-InfoMeas1-d7-3",
+                                                               "ch-Lysosomal-InfoMeas1-d7-0",
+                                                               "ch-Calcein-convex_area",
+                                                               "ch-Calcein-eccentricity",
+                                                               "ch-Lysosomal-Contrast-d7-3",
+                                                               "ch-Hoechst-mean_intensity",
+                                                               "ch-Hoechst-SumAverage-d7-1",
+                                                               "ch-Calcein-moments_central-2-2",
+                                                               "ch-Lysosomal-area",
+                                                               "ch-Lysosomal-extent"),
+                                                      to = c("ch-Calcein Hu moments",
+                                                             "ch-Lysosomal mean intensity",
+                                                             "ch-Hoechst InfoMeas1 [d = 7]",
+                                                             "ch-Lysosomal InfoMeas1 [d = 7]",
+                                                             "ch-Calcein convex area",
+                                                             "ch-Calcein eccentricity",
+                                                             "ch-Lysosomal Contrast [d = 7]",
+                                                             "ch-Hoechst mean intensity",
+                                                             "ch-Hoechst SumAverage [d = 7]",
+                                                             "ch-Calcein central moments",
+                                                             "ch-Lysosomal area",
+                                                             "ch-Lysosomal extent")))
 
 df_wide = tidyr::spread(select(cultdiff, feature, plate, diff_medians),
                         key='feature', value='diff_medians')
@@ -148,7 +178,7 @@ colnames(df_wide) = gsub("ch-", "", colnames(df_wide))
 df_wide = t(df_wide)
 
 paletteLength <- 200
-heat_scale <- colorRampPalette(c("#78A1A7","white", "#C9788A"))(paletteLength)
+heat_scale <- colorRampPalette(c("#417ca8","white", "#d1483a"))(paletteLength)
 maxval = max(abs(df_wide), na.rm = T)
 myBreaks <- c(seq(-maxval, 0, length.out=ceiling(paletteLength/2) + 1), 
               seq(1/paletteLength, maxval,
@@ -167,7 +197,7 @@ ann_colors <- list(Diagnosis=dg)
 df_wide[df_wide == 0] = NA
 
 ph = pheatmap(df_wide,
-              cluster_rows = row_clust$tree_row, 
+              #cluster_rows = row_clust$tree_row, 
               cluster_cols = col_clust$tree_col,
               color = heat_scale,
               breaks = myBreaks, 
@@ -178,8 +208,7 @@ ph = pheatmap(df_wide,
               treeheight_col = 0,
               na_col = '#888888')
 save_pheatmap_pdf(ph, filename = paste0(figdir, 'DMSO-culture-difference.pdf'),
-                  width = 8, height = 2)
-
+                  width = 8, height = 2.5)
 
 # autophagy drugs
 drug_sel = c('Midostaurin', 'Ganetespib', 
@@ -209,52 +238,6 @@ ph = pheatmap(drugprof_sel,
               treeheight_col = 0)
 save_pheatmap_pdf(ph, filename = paste0(figdir, 'drugprofiles-autophagy.pdf'),
                   width = 9, height = 8)
-
-cultdiff = read.csv(paste0(datadir, 'diff_DMSO.csv'))
-cultdiff = dplyr::rename(cultdiff, feature=X)
-cultdiff = mutate(cultdiff, diff_medians = ifelse(padj < 0.01, diff_medians, 0))
-
-df_wide = tidyr::spread(select(cultdiff, feature, plate, diff_medians),
-                        key='feature', value='diff_medians')
-rownames(df_wide) = df_wide$plate
-df_wide = df_wide[,-1]
-colnames(df_wide) = gsub("ch-", "", colnames(df_wide))
-
-df_wide = t(df_wide)
-
-paletteLength <- 200
-heat_scale <- colorRampPalette(c("#78A1A7","white", "#C9788A"))(paletteLength)
-maxval = max(abs(df_wide), na.rm = T)
-myBreaks <- c(seq(-maxval, 0, length.out=ceiling(paletteLength/2) + 1), 
-              seq(1/paletteLength, maxval,
-                  length.out=floor(paletteLength/2)))
-
-row_clust = pheatmap(cor(t(df_wide), use="pairwise.complete.obs"), silent = T)
-col_clust = pheatmap(cor(df_wide, use="pairwise.complete.obs"), silent = T)
-
-
-colannot = data.frame(plate = colnames(df_wide))
-colannot = left_join(colannot, patannot)
-rownames(colannot) = colannot$plate
-colannot = select(colannot, -c(plate))
-ann_colors <- list(Diagnosis=dg)
-
-df_wide[df_wide == 0] = NA
-
-ph = pheatmap(df_wide,
-              cluster_rows = row_clust$tree_row, 
-              cluster_cols = col_clust$tree_col,
-              color = heat_scale,
-              breaks = myBreaks, 
-              show_colnames = F,
-              annotation_col = colannot,
-              annotation_colors = ann_colors,
-              treeheight_row = 0, 
-              treeheight_col = 0,
-              na_col = '#888888')
-save_pheatmap_pdf(ph, filename = paste0(figdir, 'DMSO-culture-difference.pdf'),
-                  width = 8, height = 2)
-
 
 featcor = read.csv(paste0(datadir, 'featcor_toplot.csv'), row.names = 1)
 paletteLength <- 200
@@ -314,3 +297,31 @@ dev.off()
 #               treeheight_row = 0, 
 #               treeheight_col = 0)
 
+
+# aggregate the profiles across concentrations
+drug_prof$drugconc = rownames(drug_prof)
+drugprof_long = reshape2::melt(drug_prof, id.variable='drugconc') %>%
+  tidyr::separate(drugconc, c('drug', 'conc'), sep='_') %>%
+  filter(drug != "DMSO")
+
+# take the extreme normalized value for each feature across 3 concentrations
+drugprof_long = group_by(drugprof_long, drug, variable) %>%
+  summarise(value = value[which.max(abs(value))])
+
+heat_wide = tidyr::spread(drugprof_long, variable, value)
+mat_heatmap = as.matrix(heat_wide[,-1])
+rownames(mat_heatmap) = heat_wide$drug
+#mat_heatmap = t(mat_heatmap)
+
+row_clust = pheatmap(cor(t(mat_heatmap), use="pairwise.complete.obs"), silent = T)
+ph = pheatmap(mat_heatmap,
+              cluster_rows = row_clust$tree_row, 
+              cluster_cols = col_clust$tree_col,
+              color = heat_scale,
+              breaks = myBreaks, 
+              show_colnames = F,
+              annotation_col = colannot,
+              annotation_colors = ann_colors,
+              treeheight_row = 0, 
+              treeheight_col = 0)
+saveRDS(mat_heatmap, file = paste0(datadir, 'nonCLL-profiles-wide.rds'))
