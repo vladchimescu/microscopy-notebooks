@@ -14,6 +14,7 @@ save_pheatmap_pdf <- function(x, filename, width=10, height=10) {
   grid::grid.draw(x$gtable)
   dev.off()
 }
+set.seed(1412)
 
 drug_prof = read.csv(paste0(datadir, 'all_profiles_coculture.csv'),
                      row.names = 1)
@@ -169,6 +170,12 @@ cultdiff = mutate(cultdiff, feature = plyr::mapvalues(feature,
                                                              "ch-Lysosomal area",
                                                              "ch-Lysosomal extent")))
 
+# subset only to 4 features for Figure 1D
+cultdiff = filter(cultdiff, feature %in% c("ch-Calcein convex area",
+                                           "ch-Calcein eccentricity",
+                                           "ch-Lysosomal area",
+                                           "ch-Hoechst InfoMeas1 [d = 7]"))
+
 df_wide = tidyr::spread(select(cultdiff, feature, plate, diff_medians),
                         key='feature', value='diff_medians')
 rownames(df_wide) = df_wide$plate
@@ -208,7 +215,7 @@ ph = pheatmap(df_wide,
               treeheight_col = 0,
               na_col = '#888888')
 save_pheatmap_pdf(ph, filename = paste0(figdir, 'DMSO-culture-difference.pdf'),
-                  width = 8, height = 2.5)
+                  width = 8, height = 1.25)
 
 # autophagy drugs
 drug_sel = c('Midostaurin', 'Ganetespib', 
