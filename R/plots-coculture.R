@@ -23,7 +23,9 @@ drug_prof = drug_prof[!grepl("Vemurafenib", rownames(drug_prof)),]
 
 colannot = data.frame(names = colnames(drug_prof))
 colannot = mutate(colannot, Channel = ifelse(grepl('Calcein', names), 'Calcein',
-                                             ifelse(grepl('Hoechst', names), 'Hoechst', 'Lysosomal')))
+                                             ifelse(grepl('Hoechst', names), 'Hoechst',
+                                                    ifelse(grepl('Lysosomal', names),
+                                                           'Lysosomal', 'Cell count'))))
 colannot = mutate(colannot, Culture = ifelse(grepl("_C\\.", names), "Coculture", "Monoculture"))
 colannot = mutate(colannot, plate = gsub("(.+_[CM]\\.)(18.+)", '\\2', names))
 
@@ -39,8 +41,8 @@ colannot = left_join(colannot, patannot)
 rownames(colannot) = colannot$names
 colannot = select(colannot, -c(names, plate))
 
-chan = c("#63b7af", "#035aa6", "#d8345f")
-names(chan) = c("Calcein", "Hoechst", "Lysosomal")
+chan = c("#63b7af", "#035aa6", "#d8345f", "#ffd66b")
+names(chan) = c("Calcein", "Hoechst", "Lysosomal", "Cell count")
 dg = c("#010059", "#fdbfb3", "#fcf594", "#aee7e8")
 names(dg) = c("AML", "HCL", "MCL", "T-PLL")
 # for culture
@@ -323,7 +325,7 @@ rownames(mat_heatmap) = heat_wide$drug
 row_clust = pheatmap(cor(t(mat_heatmap), use="pairwise.complete.obs"), silent = T)
 ph = pheatmap(mat_heatmap,
               cluster_rows = row_clust$tree_row, 
-              cluster_cols = col_clust$tree_col,
+              #cluster_cols = col_clust$tree_col,
               color = heat_scale,
               breaks = myBreaks, 
               show_colnames = F,

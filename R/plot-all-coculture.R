@@ -1,7 +1,12 @@
 ## plot all coculture profiles together
 library(pheatmap)
+library(scales)
 library(dplyr)
 library(grid)
+library(gtable)
+
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+source("pheatmapwh.R")
 
 datadir = "~/Documents/github/microscopy-notebooks/data/"
 figdir = "~/Documents/github/microscopy-notebooks/figures/"
@@ -14,6 +19,33 @@ save_pheatmap_pdf <- function(x, filename, width=10, height=10) {
   grid::grid.draw(x$gtable)
   dev.off()
 }
+
+save_pheatmap_png <- function(x, filename, width=10, height=10, res = 300) {
+  stopifnot(!missing(x))
+  stopifnot(!missing(filename))
+  png(filename, width=width, height=height, units = 'in', res = res)
+  grid::grid.newpage()
+  grid::grid.draw(x$gtable)
+  dev.off()
+}
+
+
+make_colannot <- function(drug_prof, patannot) {
+  colannot = data.frame(names = colnames(drug_prof))
+  colannot = mutate(colannot, Channel = ifelse(grepl('Calcein', names), 'Calcein',
+                                               ifelse(grepl('Hoechst', names), 'Hoechst',
+                                                      ifelse(grepl('Lysosomal', names),
+                                                             'Lysosomal', 'Cell count'))))
+  colannot = mutate(colannot, Culture = ifelse(grepl("_C\\.", names), "Coculture", "Monoculture"))
+  colannot = mutate(colannot, plate = gsub("(.+_[CM]\\.)(18.+)", '\\2', names))
+  
+  colannot = left_join(colannot, patannot)
+  
+  rownames(colannot) = colannot$names
+  colannot = select(colannot, -c(names, plate))
+  colannot
+}
+
 set.seed(512)
 drugs_exclude = c("SSZ", "PEITC",
                   "SSZ + doxorubicine",
@@ -30,7 +62,9 @@ stopifnot(all(rownames(cll_prof) == rownames(noncll_prof)))
 drug_prof = cbind(cll_prof, noncll_prof)
 colannot = data.frame(names = colnames(drug_prof))
 colannot = mutate(colannot, Channel = ifelse(grepl('Calcein', names), 'Calcein',
-                                             ifelse(grepl('Hoechst', names), 'Hoechst', 'Lysosomal')))
+                                             ifelse(grepl('Hoechst', names), 'Hoechst',
+                                                    ifelse(grepl('Lysosomal', names),
+                                                           'Lysosomal', 'Cell count'))))
 colannot = mutate(colannot, Culture = ifelse(grepl("_C\\.", names), "Coculture", "Monoculture"))
 colannot = mutate(colannot, plate = gsub("(.+_[CM]\\.)(18.+)", '\\2', names))
 
@@ -45,8 +79,8 @@ colannot = left_join(colannot, patannot)
 rownames(colannot) = colannot$names
 colannot = select(colannot, -c(names, plate))
 
-chan = c("#63b7af", "#035aa6", "#d8345f")
-names(chan) = c("Calcein", "Hoechst", "Lysosomal")
+chan = c("#63b7af", "#035aa6", "#d8345f", "#ffd66b")
+names(chan) = c("Calcein", "Hoechst", "Lysosomal", "Cell count")
 dg = c("#010059", "#107595", "#fdbfb3", "#fcf594", "#aee7e8")
 names(dg) = c("AML", "CLL", "HCL", "MCL", "T-PLL")
 # for culture
@@ -87,6 +121,108 @@ ph = pheatmap(drug_prof,
 save_pheatmap_pdf(ph, filename = paste0(figdir, 
                                         'drugprofiles-coculture-all-aggregated.pdf'),
                   width = 9, height = 8)
+
+# now split the heatmap by Culture
+channels = unique(colannot$Channel)
+
+# now make the column order the same in both mono- and cocultures
+# specifically order samples and features by clustering in monoculture
+# (the reasoning: we observe more effects in monoculture, largely due to lysosomal effects
+# being more pronounced in monoculture)
+prof_mono_list = lapply(channels, function(ch) {
+  mat_mono = drug_prof[,which(colannot$Culture == 'Monoculture' & colannot$Channel == ch)]
+  mat_co = drug_prof[,which(colannot$Culture == 'Coculture' & colannot$Channel == ch)]
+  col_clust = pheatmap(mat_mono,
+                       cluster_rows = row_clust$tree_row,
+                       silent = T)
+  col_ord = col_clust$tree_col$order
+  mat_mono[row_ord, col_ord]
+} )
+prof_mono = do.call('cbind', prof_mono_list)
+
+prof_co_list = lapply(channels, function(ch) {
+  mat_mono = drug_prof[,which(colannot$Culture == 'Monoculture' & colannot$Channel == ch)]
+  mat_co = drug_prof[,which(colannot$Culture == 'Coculture' & colannot$Channel == ch)]
+  col_clust = pheatmap(mat_mono,
+                       cluster_rows = row_clust$tree_row,
+                       silent = T)
+  col_ord = col_clust$tree_col$order
+  col_ord = match(gsub("_M", "_C", colnames(mat_mono)[col_ord]), colnames(mat_co))
+  mat_co[row_ord, col_ord]
+} )
+prof_co = do.call('cbind', prof_co_list)
+
+prof_concat = cbind(prof_mono, prof_co)
+colannot_concat = make_colannot(prof_concat, patannot) %>%
+  select(-Culture)
+
+ph = pheatmapwh(prof_concat,
+                cluster_rows = F, 
+                cluster_cols = F,
+                color = heat_scale,
+                breaks = myBreaks, 
+                show_colnames = F,
+                gaps_col = ncol(prof_concat) / 2,
+                annotation_col = colannot_concat,
+                annotation_colors = ann_colors,
+                treeheight_row = 0, 
+                treeheight_col = 0)
+save_pheatmap_pdf(ph, filename = paste0(figdir, 
+                                        'drugprofiles-coculture-all-split-by-culture-cluster-by-mono.pdf'),
+                  width = 10, height = 7)
+
+save_pheatmap_png(ph, filename = paste0(figdir, 
+                                        'drugprofiles-coculture-all-split-by-culture-cluster-by-mono.png'),
+                  width = 10, height = 7, res = 400)
+
+
+prof_mono_list = lapply(channels, function(ch) {
+  mat = drug_prof[,which(colannot$Culture == 'Monoculture' & colannot$Channel == ch)]
+  col_clust = pheatmap(mat,
+                       cluster_rows = row_clust$tree_row,
+                       silent = T)
+  # row order
+  row_ord = row_clust$tree_row$order
+  # column order
+  col_ord = col_clust$tree_col$order
+  mat[row_ord, col_ord]
+} )
+prof_mono = do.call('cbind', prof_mono_list)
+
+
+prof_co_list = lapply(channels, function(ch) {
+  mat = drug_prof[,which(colannot$Culture == 'Coculture' & colannot$Channel == ch)]
+  col_clust = pheatmap(mat,
+                       cluster_rows = row_clust$tree_row,
+                       silent = T)
+  # row order
+  row_ord = row_clust$tree_row$order
+  # column order
+  col_ord = col_clust$tree_col$order
+  mat[row_ord, col_ord]
+} )
+prof_co = do.call('cbind', prof_co_list)
+
+prof_concat = cbind(prof_mono, prof_co)
+colannot_concat = make_colannot(prof_concat, patannot) %>%
+  select(-Culture)
+
+ph = pheatmapwh(prof_concat,
+                cluster_rows = F, 
+                cluster_cols = F,
+                color = heat_scale,
+                breaks = myBreaks, 
+                show_colnames = F,
+                gaps_col = ncol(prof_concat) / 2,
+                annotation_col = colannot_concat,
+                annotation_colors = ann_colors,
+                treeheight_row = 0, 
+                treeheight_col = 0)
+save_pheatmap_pdf(ph, filename = paste0(figdir, 
+                                        'drugprofiles-coculture-all-split-by-culture-separate-clust.pdf'),
+                  width = 10, height = 8)
+
+
 
 drugs_autophagy = c("Bafilomycin A1",
                     "Ganetespib",

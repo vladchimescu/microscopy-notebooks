@@ -20,7 +20,9 @@ drug_prof = read.csv(paste0(datadir, 'all_CLL_profiles.csv'),
 
 colannot = data.frame(names = colnames(drug_prof))
 colannot = mutate(colannot, Channel = ifelse(grepl('Calcein', names), 'Calcein',
-                                             ifelse(grepl('Hoechst', names), 'Hoechst', 'Lysosomal')))
+                                             ifelse(grepl('Hoechst', names), 'Hoechst',
+                                                    ifelse(grepl('Lysosomal', names),
+                                                           'Lysosomal', 'Cell count'))))
 colannot = mutate(colannot, Culture = ifelse(grepl("_C\\.", names), "Coculture", "Monoculture"))
 colannot = mutate(colannot, plate = gsub("(.+_[CM]\\.)(18.+)", '\\2', names))
 
@@ -36,8 +38,8 @@ colannot = mutate(colannot, IGHV = ifelse(is.na(IGHV), 'NA', IGHV))
 rownames(colannot) = colannot$names
 colannot = select(colannot, -c(names, plate))
 
-chan = c("#035aa6", "#d8345f")
-names(chan) = c("Hoechst", "Lysosomal")
+chan = c("#035aa6", "#d8345f", "#ffd66b")
+names(chan) = c("Hoechst", "Lysosomal", "Cell count")
 dg = c("#85a392", "#f2a365", "#ececec")
 names(dg) = c('U', 'M', 'NA')
 # for culture
