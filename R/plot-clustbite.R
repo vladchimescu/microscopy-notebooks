@@ -163,3 +163,26 @@ top_n(n=30, ch.Calcein.area) %>%
 write.csv(topwells, 
           file = paste0(datadir, 'bite-topwells.csv'),
           quote = F, row.names = F)
+
+drug_prof$comb = rownames(drug_prof)
+df = reshape2::melt(drug_prof, id.vars="comb") %>%
+  tidyr::separate(variable, into = c("tmp", "channel", "feature", "PatientID"), sep = "\\.") %>%
+  select(-tmp)
+
+library(ggplot2)
+p = ggplot(filter(df, comb %in% c("CD19", "CD20", 
+                              "BCMA", "CD19_Lenalidomide",
+                              "CD20_Lenalidomide")),
+       aes(x = comb, y = value, fill = comb))+
+  geom_boxplot(alpha=0.5) +
+  geom_dotplot(stackdir = "center", binaxis = 'y') + 
+  labs(x = "", y = "Normalized values") + 
+  geom_hline(yintercept = 0, linetype = 'dashed') + 
+  facet_wrap(~ channel + feature, ncol = 2) +
+  theme_bw() +
+  coord_fixed() + 
+  theme(axis.text.x = element_text(angle=45,hjust=1),
+        aspect.ratio = 1,
+        legend.position = 'none' )
+ggsave(p, filename = paste0(figdir, "bite-boxplots.pdf"),
+       height = 9, width = 7)

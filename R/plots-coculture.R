@@ -59,12 +59,12 @@ myBreaks <- c(seq(-maxval, 0, length.out=ceiling(paletteLength/2) + 1),
               seq(1/paletteLength, maxval,
                   length.out=floor(paletteLength/2)))
 row_clust = pheatmap(cor(t(drug_prof), use="pairwise.complete.obs"), silent = T)
-col_clust = pheatmap(cor(drug_prof, use="pairwise.complete.obs"), silent = T)
+#col_clust = pheatmap(cor(drug_prof, use="pairwise.complete.obs"), silent = T)
 
 # plot the big heatmap
 ph = pheatmap(drug_prof,
               cluster_rows = row_clust$tree_row, 
-              cluster_cols = col_clust$tree_col,
+              #cluster_cols = col_clust$tree_col,
               color = heat_scale,
               breaks = myBreaks, 
               show_colnames = F,
@@ -217,7 +217,51 @@ ph = pheatmap(df_wide,
               treeheight_col = 0,
               na_col = '#888888')
 save_pheatmap_pdf(ph, filename = paste0(figdir, 'DMSO-culture-difference.pdf'),
-                  width = 8, height = 1.25)
+                  width = 8, height = 1)
+
+# correlate protection from spontaneous apoptosis with the image features
+data_dir = "~/Documents/embl/gitlab/microscopy/"
+noncll = readRDS(paste0(data_dir, 'data/AML_viab_2020.rds'))
+viab_mono = filter(noncll, Culture == "Mono-culture")
+viab_co = filter(noncll, Culture == "Co-culture")
+
+noncll_ctrl = inner_join(viab_mono, viab_co, 
+                         by = c("plate",
+                                "Drug",
+                                "Concentration (µM)")) %>%
+  filter(Drug == 'DMSO') %>%
+  group_by(plate, Drug) %>%
+  summarise(viab_mono = median(viab.x),
+            viab_co = median(viab.y)) %>%
+  mutate(viab_diff = viab_co - viab_mono)
+
+cultdiff = inner_join(cultdiff,
+           select(noncll_ctrl, plate, viab_diff))
+
+cultdiff = inner_join(cultdiff, patannot)
+
+library(ggplot2)
+p = ggplot(mutate(cultdiff, feature = gsub('ch-', '', feature)),
+       aes(x = viab_diff, y = diff_medians)) +
+  geom_point() + 
+  facet_wrap(~ feature) + 
+  labs(x = "Median viability difference (C - M)",
+       y = "Difference of medians in control populations (C - M)") + 
+  theme_bw() + 
+  ggpubr::stat_cor()
+ggsave(p, filename = paste0(figdir, 'nonCLL-spapoptosis-vs-diff-medians-DMSO.pdf'))
+
+p = ggplot(mutate(cultdiff, feature = gsub('ch-', '', feature)) %>%
+             filter(Diagnosis == 'AML'),
+           aes(x = viab_diff, y = diff_medians)) +
+  geom_point() + 
+  facet_wrap(~ feature) + 
+  labs(x = "Median viability difference (C - M)",
+       y = "Difference of medians in control populations (C - M)") + 
+  theme_bw() + 
+  ggpubr::stat_cor()
+ggsave(p, filename = paste0(figdir, 'AML-spapoptosis-vs-diff-medians-DMSO.pdf'))
+
 
 # autophagy drugs
 drug_sel = c('Midostaurin', 'Ganetespib', 

@@ -165,21 +165,21 @@ ph = pheatmap(drugprof_sel,
 save_pheatmap_pdf(ph, filename = paste0(figdir, 'CLL-drugprofiles-autophagy.pdf'),
                   width = 9, height = 8)
 
-
-
 # Coculture vs Monoculture morphological feature difference by sample
 cultdiff = read.csv(paste0(datadir, 'CLL_diff_DMSO.csv'))
 cultdiff = dplyr::rename(cultdiff, feature=X)
-cultdiff = filter(cultdiff, ! feature %in% c("ch-Hoechst-moments_hu-1",
-                                             "ch-Lysosomal-moments_hu-2",
-                                             "ch-Lysosomal-moments_hu-1",
-                                             "ch-Lysosomal-moments_hu-3",
-                                             "ch-Lysosomal-mean_intensity",
-                                             "ch-Hoechst-extent",
-                                             "ch-Lysosomal-zernike-r15-1",
-                                             "ch-Lysosomal-solidity",
-                                             "ch-Lysosomal-moments_central-0-2",
-                                             "ch-Lysosomal-moments_central-2-0"))
+cultdiff = filter(cultdiff, feature %in% c("ch-Hoechst-eccentricity",
+                                           "ch-Hoechst-InfoMeas1-d5-3",
+                                           "ch-Lysosomal-area",
+                                           "ch-Lysosomal-extent")) %>%
+  mutate(feature = plyr::mapvalues(feature, from = c("ch-Hoechst-eccentricity",
+                                                     "ch-Hoechst-InfoMeas1-d5-3",
+                                                     "ch-Lysosomal-area",
+                                                     "ch-Lysosomal-extent"),
+                                   to = c("Hoechst eccentricity",
+                                          "Hoechst InfoMeas1 [d = 5]",
+                                          "Lysosomal area",
+                                          "Lysosomal extent")))
 
 df_wide = tidyr::spread(select(cultdiff, feature, plate, diff_medians),
                         key='feature', value='diff_medians')
@@ -208,31 +208,8 @@ ann_colors <- list(IGHV=dg)
 
 df_wide[df_wide == 0] = NA
 
-ph = pheatmap(df_wide,
-              #cluster_rows = row_clust$tree_row, 
-              cluster_cols = col_clust$tree_col,
-              color = heat_scale,
-              breaks = myBreaks, 
-              show_colnames = F,
-              annotation_col = colannot,
-              annotation_colors = ann_colors,
-              treeheight_row = 0, 
-              treeheight_col = 0,
-              na_col = '#888888')
-
-
 # now flip the matrix
 df_long = t(df_wide)
-df_long = df_long[,c('Hoechst-eccentricity',
-                      'Hoechst-Correlation-d7-1',
-                      'Lysosomal-area',
-                      'Lysosomal-extent',
-                      'Lysosomal-zernike-r15-2')]
-colnames(df_long) = c('Hoechst eccentricity',
-                      'Hoechst Correlation [d = 7]',
-                      'Lysosomal area',
-                      'Lysosomal extent',
-                      'Lysosomal zernike [r = 15]')
 ph = pheatmap(df_long,
               cluster_cols = F,
               cluster_rows = col_clust$tree_col,
@@ -246,8 +223,7 @@ ph = pheatmap(df_long,
               na_col = '#888888')
 
 save_pheatmap_pdf(ph, filename = paste0(figdir, 'CLL-DMSO-culture-difference.pdf'),
-                  width = 2.5, height = 7)
-
+                  width = 2, height = 7)
 
 # aggregate the profiles across concentrations
 drug_prof$drugconc = rownames(drug_prof)
