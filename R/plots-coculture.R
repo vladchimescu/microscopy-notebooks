@@ -41,12 +41,13 @@ colannot = left_join(colannot, patannot)
 rownames(colannot) = colannot$names
 colannot = select(colannot, -c(names, plate))
 
-chan = c("#63b7af", "#035aa6", "#d8345f", "#ffd66b")
+chan = c("#63b7af", "#035aa6", "#c20078", "#ffd66b")
 names(chan) = c("Calcein", "Hoechst", "Lysosomal", "Cell count")
-dg = c("#010059", "#fdbfb3", "#fcf594", "#aee7e8")
+#dg = c("#010059", "#fdbfb3", "#fcf594", "#aee7e8")
+dg =  c("#4daf4a", "#9e4ea3", "#ffc633", "#ff5f00")
 names(dg) = c("AML", "HCL", "MCL", "T-PLL")
 # for culture
-colscult = c("#407088", "#b3b3b3")
+colscult = c('#ee854a', '#4878d0')
 names(colscult) = c("Coculture", "Monoculture")
 ann_colors <- list(Channel=chan,
                    Diagnosis=dg,
@@ -150,6 +151,7 @@ cultdiff = mutate(cultdiff, feature = plyr::mapvalues(feature,
                                                       from = c("ch-Calcein-moments_hu-1",
                                                                "ch-Lysosomal-mean_intensity",
                                                                "ch-Hoechst-InfoMeas1-d7-3",
+                                                               "ch-Hoechst-InfoMeas1-d5-3",
                                                                "ch-Lysosomal-InfoMeas1-d7-0",
                                                                "ch-Calcein-convex_area",
                                                                "ch-Calcein-eccentricity",
@@ -162,6 +164,7 @@ cultdiff = mutate(cultdiff, feature = plyr::mapvalues(feature,
                                                       to = c("ch-Calcein Hu moments",
                                                              "ch-Lysosomal mean intensity",
                                                              "ch-Hoechst InfoMeas1 [d = 7]",
+                                                             "ch-Hoechst InfoMeas1 [d = 5]",
                                                              "ch-Lysosomal InfoMeas1 [d = 7]",
                                                              "ch-Calcein convex area",
                                                              "ch-Calcein eccentricity",
@@ -176,7 +179,24 @@ cultdiff = mutate(cultdiff, feature = plyr::mapvalues(feature,
 cultdiff = filter(cultdiff, feature %in% c("ch-Calcein convex area",
                                            "ch-Calcein eccentricity",
                                            "ch-Lysosomal area",
-                                           "ch-Hoechst InfoMeas1 [d = 7]"))
+                                           "ch-Lysosomal extent",
+                                           "ch-Lysosomal mean intensity",
+                                           "ch-Hoechst InfoMeas1 [d = 5]"))
+
+cultdiff = distinct(cultdiff, feature, plate, diff_medians, .keep_all = T)
+
+dmsodiff_out = inner_join(cultdiff, patannot) %>%
+  mutate(feature = gsub("ch-", "", feature)) %>%
+  group_by(Diagnosis, feature) %>%
+  summarise(mean_diff_medians = mean(diff_medians)) %>%
+  ungroup()
+
+saveRDS(dmsodiff_out, file = paste0(datadir, "nonCLL-mean_diff_medians.rds"))
+
+# ggplot(dmsodiff_out, aes(x = Diagnosis, y = feature, fill = mean_diff_medians)) +
+#   geom_tile() +
+#   scale_fill_gradient2(low = "#417ca8",
+#                        high = "#d1483a")
 
 df_wide = tidyr::spread(select(cultdiff, feature, plate, diff_medians),
                         key='feature', value='diff_medians')
@@ -213,11 +233,12 @@ ph = pheatmap(df_wide,
               show_colnames = F,
               annotation_col = colannot,
               annotation_colors = ann_colors,
+              fontsize = 9,
               treeheight_row = 0, 
               treeheight_col = 0,
               na_col = '#888888')
 save_pheatmap_pdf(ph, filename = paste0(figdir, 'DMSO-culture-difference.pdf'),
-                  width = 8, height = 1)
+                  width = 16/2.54, height = 3/2.54)
 
 # correlate protection from spontaneous apoptosis with the image features
 data_dir = "~/Documents/embl/gitlab/microscopy/"

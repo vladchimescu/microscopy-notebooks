@@ -46,6 +46,13 @@ make_colannot <- function(drug_prof, patannot) {
   colannot
 }
 
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  legend
+}
+
 set.seed(512)
 drugs_exclude = c("SSZ", "PEITC",
                   "SSZ + doxorubicine",
@@ -53,6 +60,69 @@ drugs_exclude = c("SSZ", "PEITC",
                   "Vorinostat + PEITC",
                   "Hydroxychloroquine",
                   "β-phenylethyl isothiocyanate")
+
+# first plot the heatmap showing mean difference of medians of control populations
+# in coculture vs monoculture
+dmso_diff = bind_rows(readRDS(paste0(datadir, "CLL-mean_diff_medians.rds")),
+          readRDS(paste0(datadir, "nonCLL-mean_diff_medians.rds")))
+
+dmso_diff = mutate(dmso_diff, feature = plyr::mapvalues(feature,
+                                                        from = c("Lysosomal mean intensity",
+                                                                 "Hoechst InfoMeas1 [d = 5]"),
+                                                        to = c("Lysosomal intensity",
+                                                               "Hoechst InfoMeas1")))
+# remove Hoechst eccentricity
+dmso_diff = filter(dmso_diff, feature != "Hoechst eccentricity")
+
+df_wide = as.data.frame(tidyr::spread(dmso_diff,
+                        key='Diagnosis', value='mean_diff_medians'))
+rownames(df_wide) = df_wide$feature
+df_wide = df_wide[,-1]
+maxval = max(abs(df_wide), na.rm = T)
+df_wide[is.na(df_wide)] = 0
+row_clust = pheatmap(cor(t(df_wide), use="pairwise.complete.obs"), silent = T)
+col_clust = pheatmap(cor(df_wide, use="pairwise.complete.obs"), silent = T)
+df_wide[df_wide == 0] = NA
+
+dmso_diff = reshape2::melt(as.matrix(df_wide), varnames=c("feature", "Diagnosis"),
+               value.name="mean_diff_medians")
+
+library(ggplot2)
+p = ggplot(dmso_diff,
+       aes(x = factor(Diagnosis, levels = col_clust$tree_col$labels[col_clust$tree_col$order]), 
+           y = factor(feature, levels = row_clust$tree_row$labels[row_clust$tree_row$order]),
+           fill = mean_diff_medians)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "#417ca8",
+                       high = "#d1483a",
+                       na.value = "#888888",
+                       limits=c(-maxval-0.1,maxval+0.1)) +
+  theme_classic(base_size = 9) + 
+  labs(x = "", y = "",
+       fill = "Difference\n of medians") + 
+  scale_x_discrete(position = "top")+
+  theme(axis.text.x = element_text(angle=90, 
+                                   hjust = 0,
+                                   size=rel(1)),
+        axis.text.y = element_text(size = rel(1)),
+        axis.line = element_blank(),
+        axis.ticks = element_blank())
+ggsave(p+theme(legend.position = 'none'),
+       filename = paste0(figdir, "DMSO-diff_medians_all-entities.pdf"),
+       width = 5.75, height = 4.75, units = 'cm')
+
+library(ggpubr)
+leg = as_ggplot(ggpubr::get_legend(p + theme(legend.position = 'bottom',
+                                             legend.key.width = unit(5, 'mm'),
+                                             legend.key.height = unit(2,'mm'))))
+ggsave(leg, filename = paste0(figdir, 'DMSO-diff-legend.pdf'),
+       width=5, height = 2, units = 'cm')
+
+# in_to_cm = 1 / 2.54
+# pdf(paste0(figdir, 'DMSO-diff-legend.pdf'), 
+#     width = 5*in_to_cm, height = 1.1*in_to_cm)
+# grid.draw(g_legend(p))
+# dev.off()
 
 cll_prof = readRDS(paste0(datadir, 'CLL-profiles-wide.rds'))
 noncll_prof = readRDS(paste0(datadir, 'nonCLL-profiles-wide.rds'))
@@ -343,6 +413,43 @@ p = ggplot(filter(lys_df, feature == 'ch-Lysosomal-mean_intensity'),
         legend.text = element_text(size=14),
         legend.title = element_text(size=16)) 
 ggsave(p, filename = paste0(figdir, 'drugs-lysosomal-intensity.pdf'),
+       width = 6, height = 5)
+
+# add diagnosis and plot only for CLL samples
+lys_df = inner_join(lys_df, patannot) %>%
+  filter(Diagnosis == 'CLL')
+
+p = ggplot(filter(lys_df, feature == 'ch-Lysosomal-area'),
+           aes(x = Drug, y= value, fill = Culture))+
+  geom_boxplot()+
+  scale_fill_manual(values = c("#407088", "#b3b3b3")) + 
+  labs(x = "", y = "Normalized lysosomal area") + 
+  geom_hline(yintercept = 0, linetype='dashed')+
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle=90, hjust = 1, size=14),
+        axis.text.y = element_text(size=14),
+        axis.title = element_text(size=16),
+        legend.position = 'none',
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=16)) 
+ggsave(p, filename = paste0(figdir, 'CLL-drugs-lysosomal-area.pdf'),
+       width = 6, height = 5)
+
+
+p = ggplot(filter(lys_df, feature == 'ch-Lysosomal-mean_intensity'),
+           aes(x = Drug, y= value, fill = Culture))+
+  geom_boxplot()+
+  scale_fill_manual(values = c("#407088", "#b3b3b3")) + 
+  labs(x = "", y = "Normalized lysosomal intensity") + 
+  geom_hline(yintercept = 0, linetype='dashed')+
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle=90, hjust = 1, size=14),
+        axis.text.y = element_text(size=14),
+        axis.title = element_text(size=16),
+        legend.position = 'none',
+        legend.text = element_text(size=14),
+        legend.title = element_text(size=16)) 
+ggsave(p, filename = paste0(figdir, 'CLL-drugs-lysosomal-intensity.pdf'),
        width = 6, height = 5)
 
 

@@ -38,12 +38,12 @@ colannot = mutate(colannot, IGHV = ifelse(is.na(IGHV), 'NA', IGHV))
 rownames(colannot) = colannot$names
 colannot = select(colannot, -c(names, plate))
 
-chan = c("#035aa6", "#d8345f", "#ffd66b")
+chan = c("#035aa6", "#c20078", "#ffd66b")
 names(chan) = c("Hoechst", "Lysosomal", "Cell count")
-dg = c("#85a392", "#f2a365", "#ececec")
+dg = c("#1e488f", "#d46a7e", "#ececec")
 names(dg) = c('U', 'M', 'NA')
 # for culture
-colscult = c("#407088", "#b3b3b3")
+colscult = c('#ee854a', '#4878d0')
 names(colscult) = c("Coculture", "Monoculture")
 ann_colors <- list(Channel=chan,
                    IGHV=dg,
@@ -181,6 +181,13 @@ cultdiff = filter(cultdiff, feature %in% c("ch-Hoechst-eccentricity",
                                           "Lysosomal area",
                                           "Lysosomal extent")))
 
+dmsodiff_out = mutate(cultdiff, Diagnosis = 'CLL') %>%
+  group_by(Diagnosis, feature) %>%
+  summarise(mean_diff_medians = mean(diff_medians)) %>%
+  ungroup()
+
+saveRDS(dmsodiff_out, file = paste0(datadir, "CLL-mean_diff_medians.rds"))
+
 df_wide = tidyr::spread(select(cultdiff, feature, plate, diff_medians),
                         key='feature', value='diff_medians')
 rownames(df_wide) = df_wide$plate
@@ -208,22 +215,21 @@ ann_colors <- list(IGHV=dg)
 
 df_wide[df_wide == 0] = NA
 
-# now flip the matrix
-df_long = t(df_wide)
-ph = pheatmap(df_long,
-              cluster_cols = F,
-              cluster_rows = col_clust$tree_col,
+ph = pheatmap(df_wide,
+              cluster_rows = F,
+              cluster_cols = col_clust$tree_col,
               color = heat_scale,
               breaks = myBreaks, 
-              show_rownames = F,
-              annotation_row = colannot,
+              show_colnames = F,
+              annotation_col = colannot,
               annotation_colors = ann_colors,
+              fontsize = 9,
               treeheight_row = 0, 
               treeheight_col = 0,
               na_col = '#888888')
 
 save_pheatmap_pdf(ph, filename = paste0(figdir, 'CLL-DMSO-culture-difference.pdf'),
-                  width = 2, height = 7)
+                  width = 17.5/2.54, height = 2.5/2.54)
 
 # aggregate the profiles across concentrations
 drug_prof$drugconc = rownames(drug_prof)
