@@ -59,6 +59,7 @@ if __name__ == '__main__':
         imgx = ImgX(img=img, bbox=bbox,
                     n_chan=['Lysosomal', 'Calcein', 'Hoechst'])
         imgx.params['texture'] = 'both'
+        imgx.params['thresh'] = True
         imgx.compute_props()
         img_df = imgx.get_df().copy()
         if img_df.shape[0] == labels_df.shape[0]:
