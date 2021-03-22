@@ -83,6 +83,7 @@ if __name__ == '__main__':
                 bbox=bbox,
                 n_chan=['Hoechst', 'Lysosomal'])
            imgx.params['texture'] = 'both'
+           imgx.params['thresh'] = True
            imgx.compute_props()
            img_df = imgx.get_df().copy()
            img_df['class'] = well_df['class'].values
