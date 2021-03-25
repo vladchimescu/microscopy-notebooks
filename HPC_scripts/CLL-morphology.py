@@ -59,6 +59,9 @@ if __name__ == '__main__':
     all_wells = eval_df['well'].unique()
     well = all_wells[wellnum]
     fnames = [f for f in os.listdir(imgdir) if '.tiff' in f]
+
+    # apply gamma correction
+    gamma = 0.3
    
     imgdata = []
     for fview in range(1,4):
@@ -67,9 +70,12 @@ if __name__ == '__main__':
        imgstack = load_image_series(path=imgdir,
                                     imgfiles=[w for w in wfiles if 'ch1' in w])
        hoechst = np.max(imgstack, axis=0)
+       hoechst = hoechst**gamma
+       
        imgstack = load_image_series(path=imgdir,
                                     imgfiles=[w for w in wfiles if 'ch2' in w])
        ly = np.max(imgstack, axis=0)
+       ly = ly**gamma
 
        well_df = eval_df[eval_df['wellpos']==wellpos]
        if well_df.shape[0]:
