@@ -45,6 +45,10 @@ if __name__ == '__main__':
     well_imgs = [img for img in imgs if well in img]
     well_imgs.sort()
 
+    # load minimum lysosomal intensity (estmated background)
+    thresh_df = pd.read_csv('data/coculture_metafiles/thresholds/'+ plate + '.csv')
+    bg_thresh = np.min(thresh_df[['thresh_mono', 'thresh_co']].values)
+
     imgdata = []
     annot = []
 
@@ -61,6 +65,15 @@ if __name__ == '__main__':
         imgx.params['texture'] = 'both'
         imgx.compute_props()
         img_df = imgx.get_df().copy()
+
+        # set lysosomal area to zero for those
+        # bounding boxes that don't have any pixel intensities
+        # above the estimated background
+        img_ly = img[:,:,0]
+        bg_mask = [not np.any(img_ly[x[2]:x[3], x[0]:x[1]] > bg_thresh) for x in bbox]
+        if np.any(bg_mask):
+            img_df.loc[bg_mask, 'ch-Lysosomal-area'] = 0
+        
         if img_df.shape[0] == labels_df.shape[0]:
             annot.append(labels_df)
             imgdata.append(img_df)
