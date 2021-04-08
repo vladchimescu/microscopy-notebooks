@@ -60,6 +60,10 @@ if __name__ == '__main__':
     well = all_wells[wellnum]
     fnames = [f for f in os.listdir(imgdir) if '.tiff' in f]
 
+    # load minimum lysosomal intensity (estmated background)
+    thresh_df = pd.read_csv('data/coculture_metafiles/thresholds/'+ plate + '.csv')
+    bg_thresh = np.min(thresh_df[['thresh_mono', 'thresh_co']].values)
+
     # apply gamma correction
     gamma = 0.3
    
@@ -92,6 +96,9 @@ if __name__ == '__main__':
            imgx.compute_props()
            img_df = imgx.get_df().copy()
            img_df['class'] = well_df['class'].values
+           bg_mask = [not np.any(ly[x[2]:x[3], x[0]:x[1]] > bg_thresh) for x in bbox]
+           if np.any(bg_mask):
+               img_df.loc[bg_mask, 'ch-Lysosomal-area'] = 0
            imgdata.append(img_df)
 
 
