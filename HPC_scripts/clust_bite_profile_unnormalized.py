@@ -12,7 +12,7 @@ from bioimg.singlecell import preprocess_data
 from bioimg.singlecell import select_features, scale_data
 from bioimg.singlecell import aggregate_profiles
 
-def load_bite(platedir, wells, annot, thresh=300):
+def load_bite(platedir, wells, annot, thresh=600):
     imgdf = []
     for w in wells:
         if os.path.isfile(os.path.join(platedir, w+'.csv')):
@@ -57,7 +57,7 @@ sel = ['ch-Calcein-area',
 
 if __name__ == '__main__':
     # path to the image data
-    path = 'data/BiTE-profiles/'
+    path = 'data/clust-BiTE-profiles/'
     # plate identifier (e.g. '180528_Plate3')
     plate = 'BiTE-' + sys.argv[1]
     print("Processing plate: " + str(plate))
@@ -81,7 +81,13 @@ if __name__ == '__main__':
     ## aggregated profiles
     img_prof = aggregate_profiles(imgdf, img_annot)
 
-    outdir = 'data/bite_mean_profiles_unnormalized/'
+    # add cluster count in each well (unnormalized count)
+    clust_count = img_annot.groupby('well').size().reset_index()
+    clust_count.rename(columns={0 : 'count'}, inplace=True)
+    img_prof = pd.merge(img_prof, clust_count, on='well')
+    
+
+    outdir = 'data/clustbite_mean_profiles_unnormalized/'
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
