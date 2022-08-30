@@ -28,7 +28,8 @@ if __name__ == '__main__':
     wellnum = int(sys.argv[3]) - 1
     print("Processing plate: " + str(plate))
 
-    imgdir = os.path.join(path, 'CLL')
+    #imgdir = os.path.join(path, 'CLL')
+    imgdir = path
     
     for f in os.listdir(imgdir):
         if re.search(plate + "_", f):
