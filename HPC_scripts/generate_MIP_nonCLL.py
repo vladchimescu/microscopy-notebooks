@@ -1,6 +1,6 @@
 #!/usr//bin/env python3
 '''
-Script for generating MIP images for CLL samples
+Script for generating MIP images for non-CLL diseases
 '''
 # %%
 import javabridge
@@ -61,5 +61,10 @@ if __name__ == '__main__':
                                     imgfiles=[w for w in wfiles if 'ch2' in w])
        ly_mip = np.max(imgstack, axis=0)
        write_image(img=ly_mip, path=os.path.join(outdir, wellpos + '-ch2.tiff'))
+
+       imgstack = load_image_series(path=imgdir,
+                                    imgfiles=[w for w in wfiles if 'ch3' in w])
+       ca_mip = np.max(imgstack, axis=0)
+       write_image(img=ca_mip, path=os.path.join(outdir, wellpos + '-ch3.tiff'))
 
     javabridge.kill_vm()
