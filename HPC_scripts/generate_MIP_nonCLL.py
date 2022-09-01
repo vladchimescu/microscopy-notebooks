@@ -67,5 +67,6 @@ if __name__ == '__main__':
                                     imgfiles=[w for w in wfiles if 'ch3' in w])
        ca_mip = np.max(imgstack, axis=0)
        write_image(img=ca_mip, path=os.path.join(outdir, wellpos + '-ch3.tiff'))
-
+       print(f"Wrote MIP image for FOV: {fview}")
+    print("Done")
     javabridge.kill_vm()
